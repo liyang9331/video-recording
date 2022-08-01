@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <h1>HTML VIDEO Recoreing and screenshot!</h1>
+    <h3>Input video:1080P</h3>
+    <h3>Output video:1080P</h3>
+    <div class="layout">
+        <video id="video" src="./test.mp4" width="720" height="405" controls autoplay muted></video>
+        <div style="margin-left: 40px;">
+            <h3 id="canvasLog">画板：</h3>
+            <canvas id="cvs" style="width: 720px;height:405px;border: 1px solid #ccc;"></canvas>
+        </div>
+
+    </div>
+    <div style="margin-top:20px">
+        <button>截图</button>
+        <button id="btn" onclick="handle()">开始录制</button>
+    </div>
+    <script>
+        var mediaRecorder = null
+        var interval = null
+        var flag = false
+        function handle(){
+            // console.log(flag)
+            if (flag) {
+                stop()
+                document.getElementById("btn").innerHTML = "开始录制"
+                flag = false
+            } else {
+                start()
+                document.getElementById("btn").innerHTML = "结束录制"
+                flag = true
+            }
+        }
+        function start(){
+            var video = document.getElementById("video")
+            var cvs = document.getElementById("cvs")
+            var ctx = cvs.getContext("2d")
+            const w = 720
+            const h = 405
+            const MimeType = isTypeSupported()
+            const name = MimeType.indexOf("vp") == -1 ? "Recorder.mp4" : "Recorder.webm"
+            const type = MimeType.indexOf("vp") == -1 ? "video/mp4" : "video/webm"
+            const options = {
+                // audioBitsPerSecond:,//指定音频的比特率
+                videoBitsPerSecond: 2500000, //指定视频的比特率
+                //bitsPerSecond:,//指定音频和视频的比特率
+                MimeType
+            }
+            console.log(options)
+            mediaRecorder = new MediaRecorder(cvs.captureStream(25), options)
+            mediaRecorder.addEventListener("dataavailable", event => {
+                console.log(event.data)
+                // download(event.data, name, type)
+            })
+
+            // 计时器
+            interval = setInterval(() => {
+                ctx.drawImage(video, 0, 0,w,h)
+            }, 20)
+            mediaRecorder.start()
+        }
+        // 结束录制
+        function stop () {
+            console.log(mediaRecorder)
+            mediaRecorder.stop()
+            clearInterval(interval)
+        }
+        // 处理blob
+        function download(blob, name = "Recorder", type){
+            // 创建 a 标签
+            const file = new Blob([blob], {
+                type: type
+            })
+            let elink = document.createElement('a');
+            document.body.appendChild(elink);
+            elink.style.display = 'none'; // 隐藏起来
+            elink.download = name
+            // 兼容webkix浏览器，处理webkit浏览器中herf自动添加blob前缀，默认在浏览器打开而不是下载
+            const URL = window.URL || window.webkitURL
+            elink.href = URL.createObjectURL(blob) // 通过createObjectURL方法转换成对象url
+            elink.click();
+            document.body.removeChild(elink);
+            URL.revokeObjectURL(elink.href); // 释放URL 对象
+        }
+
+        // 判断主流 MIME 格式能否被客户端录制
+        function isTypeSupported () {
+            var types = [
+                "video/webm\;codecs=h264",
+                "video/webm\;codecs=vp9",
+                "video/webm\;codecs=vp8",
+            ];
+
+            for (var i in types) {
+                const flag = MediaRecorder.isTypeSupported(types[i])
+                console.log("Is " + types[i] + " supported? " + (flag ? "Maybe!" : "Nope :("));
+                if (flag) {
+                    return types[i]
+                } else {
+                    return ""
+                }
+            }
+
+        }
+    </script>
+</body>
+
+</html>
